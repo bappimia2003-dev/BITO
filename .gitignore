@@ -9,6 +9,7 @@ out/
 # Compiles / Bundles
 dist/
 build/
+*.tsbuildinfo
 
 # Env files (commit .env.example only)
 .env*

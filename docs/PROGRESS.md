@@ -57,3 +57,63 @@
 ### Deviations From Spec
 
 - None.
+
+---
+
+## Phase 1 — Database & repository foundation
+
+### Plan (<= 15 lines)
+
+1. Write 0001 through 0008 migration SQL files in db/migrations/ adhering strictly to Section 5.
+2. Verify scripts/migrate.ts applies all migrations idempotently and records schema_migrations.
+3. Implement pooler-safe postgres client (apps/web/src/server/db/client.ts) with prepare: false and ssl: require.
+4. Implement transaction helper and row mapper base utilities (snake_case DB -> camelCase domain).
+5. Implement assertProjectRole authorization helper in apps/web/src/server/auth/rbac.ts.
+6. Implement withRoute HTTP wrapper skeleton in apps/web/src/server/http/withRoute.ts.
+7. Implement rate-limit helper in apps/web/src/server/security/rateLimit.ts.
+8. Implement audit log helper in apps/web/src/server/repositories/audit.ts.
+9. Implement repository scaffolding in apps/web/src/server/repositories/.
+10. Write integration tests: migration idempotency, FK/unique/check constraints, audit immutability, RLS, 20 concurrent rate-limit upserts.
+11. Run Phase 1 gate (pnpm verify + integration tests), update docs, and send Phase 1 report.
+
+### Status
+
+- GREEN
+
+### Built
+
+- Database Migrations (`db/migrations/`):
+  - `0001_extensions.sql`: `pgcrypto`, `citext`
+  - `0002_auth.sql`: `users`, `webauthn_credentials`, `webauthn_challenges`, `sessions`
+  - `0003_projects_workflows.sql`: `projects`, `project_members`, `workflows`, `nodes`, `connections`, `workflow_versions`
+  - `0004_credentials_variables.sql`: `credentials`, `variables`, unique scope indexes
+  - `0005_execution.sql`: `executions`, `node_runs`, `jobs`, `execution_scratch`, `logs`
+  - `0006_files_data.sql`: `files`, `data_tables`, `data_rows` with GIN index
+  - `0007_webhooks_schedules.sql`: `webhook_endpoints`, `webhook_events`, `schedules`, `rate_limits`
+  - `0008_security.sql`: `audit_logs` (append-only trigger) and RLS enabled across all public tables
+- Server Foundation:
+  - `apps/web/src/server/db/client.ts`: Connection pooler client (`prepare: false`, `ssl: 'require'`), `withTransaction` helper
+  - `apps/web/src/server/auth/rbac.ts`: `assertProjectRole` enforcing hierarchy (`owner` > `editor` > `viewer`) and project isolation
+  - `apps/web/src/server/http/withRoute.ts`: Shared API route wrapper with CSRF check, rate limiting, Zod parsing, error mapping
+  - `apps/web/src/server/security/rateLimit.ts`: Atomic upsert rate limiter using Postgres `rate_limits` table
+  - `apps/web/src/server/repositories/`:
+    - `base.ts`: Snake_case DB -> camelCase domain row mapper
+    - `audit.ts`: Immutable audit logger with automatic secret redaction
+    - `users.ts`, `projects.ts`, `workflows.ts`, `credentials.ts`, `executions.ts`, `files.ts`, `variables.ts`, `dataTables.ts`, `webhooks.ts`, `schedules.ts`
+- Tests:
+  - `tests/integration/phase1.test.ts`: 5 comprehensive integration tests verifying:
+    1. Migration idempotency (re-run is a clean no-op, all 8 recorded)
+    2. RLS enabled on all public tables
+    3. `audit_logs` immutable (UPDATE and DELETE blocked by trigger)
+    4. FK, unique, and check constraints enforced
+    5. Rate-limit upsert counts accurately under 20 concurrent calls
+  - `apps/web/tests/withRoute.test.ts`: withRoute error mapping, Zod parsing, CSRF checks
+  - `apps/web/tests/health.test.ts`: verified `GET /api/health` returns `db: true` with live database
+
+### Known Issues / Not Done
+
+- None.
+
+### Deviations From Spec
+
+- None.

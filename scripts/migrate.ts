@@ -6,6 +6,15 @@ interface MigrationRow {
   version: string;
 }
 
+// Automatically load .env if available
+try {
+  if (typeof process.loadEnvFile === 'function') {
+    process.loadEnvFile();
+  }
+} catch {
+  // Ignore if .env does not exist
+}
+
 async function runMigrations(): Promise<void> {
   const dbUrl = process.env.DATABASE_URL_MIGRATE || process.env.DATABASE_URL;
 
@@ -14,7 +23,12 @@ async function runMigrations(): Promise<void> {
     process.exit(1);
   }
 
-  const sql: Sql = postgres(dbUrl, { max: 1, prepare: false });
+  const sql: Sql = postgres(dbUrl, {
+    max: 1,
+    prepare: false,
+    ssl: 'require',
+    connect_timeout: 10,
+  });
 
   try {
     // Ensure migrations tracking table exists
