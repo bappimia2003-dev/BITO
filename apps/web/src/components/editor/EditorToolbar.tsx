@@ -39,6 +39,7 @@ export function EditorToolbar() {
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(workflow.name);
+  const [isActivating, setIsActivating] = useState(false);
 
   const errorCount = issues.filter((i) => i.severity === 'error').length;
   const warningCount = issues.filter((i) => i.severity === 'warning').length;
@@ -47,6 +48,35 @@ export function EditorToolbar() {
     setIsEditingName(false);
     if (nameValue.trim() && nameValue !== workflow.name) {
       updateWorkflowMeta({ name: nameValue.trim() });
+    }
+  };
+
+  const handleStatusChange = async (newStatus: 'draft' | 'active' | 'archived') => {
+    if (newStatus === 'active') {
+      setIsActivating(true);
+      try {
+        const res = await fetch(`/api/workflows/${workflow.id}/activate`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) {
+          const msg = data.error?.message || 'Activation failed';
+          alert(`Activation failed: ${msg}`);
+          return;
+        }
+        updateWorkflowMeta({ status: 'active' });
+      } catch (err) {
+        alert(`Activation error: ${String(err)}`);
+      } finally {
+        setIsActivating(false);
+      }
+    } else if (newStatus === 'draft') {
+      try {
+        await fetch(`/api/workflows/${workflow.id}/deactivate`, { method: 'POST' });
+        updateWorkflowMeta({ status: 'draft' });
+      } catch (err) {
+        alert(`Deactivation error: ${String(err)}`);
+      }
+    } else {
+      updateWorkflowMeta({ status: newStatus });
     }
   };
 
@@ -104,10 +134,11 @@ export function EditorToolbar() {
         {/* Status Badge */}
         <select
           value={workflow.status}
-          onChange={(e) =>
-            updateWorkflowMeta({ status: e.target.value as 'draft' | 'active' | 'archived' })
-          }
+          disabled={isActivating}
+          onChange={(e) => handleStatusChange(e.target.value as 'draft' | 'active' | 'archived')}
           className={`rounded-full px-2 py-0.5 text-xs font-medium outline-none border cursor-pointer ${
+            isActivating ? 'opacity-50 cursor-wait' : ''
+          } ${
             workflow.status === 'active'
               ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
               : workflow.status === 'draft'

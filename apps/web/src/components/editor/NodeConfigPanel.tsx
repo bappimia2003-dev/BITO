@@ -4,11 +4,14 @@ import React, { useState } from 'react';
 import { X, Trash2, Sliders, Settings2, History, BookOpen, Clock, AlertCircle } from 'lucide-react';
 import { useEditor } from './EditorContext.js';
 import { FormGenerator } from './FormGenerator.js';
+import { WebhookConfigDetails } from './WebhookConfigDetails.js';
+import { ScheduleConfigDetails } from './ScheduleConfigDetails.js';
 
 type TabType = 'parameters' | 'settings' | 'last_run' | 'docs';
 
 export function NodeConfigPanel() {
   const {
+    workflow,
     selectedNode,
     catalog,
     credentials,
@@ -148,6 +151,18 @@ export function NodeConfigPanel() {
               <div className="py-6 text-center text-xs text-muted-foreground">
                 No parameters required for this node.
               </div>
+            )}
+
+            {data.type === 'trigger.webhook' && (
+              <WebhookConfigDetails workflowId={workflow.id} node={selectedNode} />
+            )}
+
+            {data.type === 'trigger.schedule' && (
+              <ScheduleConfigDetails
+                workflowId={workflow.id}
+                cron={(data.config['cron'] as string) || '0 * * * *'}
+                timezone={(data.config['timezone'] as string) || 'UTC'}
+              />
             )}
           </div>
         )}
