@@ -3,6 +3,7 @@
 ## Phase 0 — Bootstrap
 
 ### Plan (<= 15 lines)
+
 1. Initialize pnpm workspace (apps/web, packages/{shared,engine,integrations,nodes}) with root package.json.
 2. Configure TypeScript strict configs across all workspaces.
 3. Configure ESLint flat config with layer-boundary rules enforcing import restrictions.
@@ -15,9 +16,11 @@
 10. Run Phase 0 gate (pnpm verify, lint test for engine layer boundaries, local health route).
 
 ### Status
+
 - GREEN
 
 ### Built
+
 - pnpm workspace (`apps/web`, `packages/{shared,engine,integrations,nodes}`)
 - Strict TypeScript configuration across workspaces (`strict: true`, `noUncheckedIndexedAccess: true`)
 - ESLint flat configuration (`eslint.config.mjs`) with layer-boundary rules and console restrictions
@@ -48,7 +51,9 @@
 - `README.md`, `.env.example`, `.gitignore`
 
 ### Known Issues / Not Done
+
 - None.
 
 ### Deviations From Spec
+
 - None.
