@@ -12,6 +12,8 @@ import { safeHttp } from '../security/safeHttp.js';
 import { PostgresExecutionStore } from './postgresExecutionStore.js';
 import { PostgresCredentialResolver } from './credentialResolver.js';
 
+import { runDueSchedules } from '../scheduler/scheduleService.js';
+
 let lastHousekeepingTime = 0;
 const HOUSEKEEPING_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -56,7 +58,14 @@ export async function runTick(options: RunTickOptions = {}): Promise<TickResult>
     logger.warn('Reclaim stale jobs failed', { error: String(err) });
   }
 
-  // 3. Claim and process loop
+  // 3. Dispatch due schedules
+  try {
+    await runDueSchedules();
+  } catch (err) {
+    logger.warn('Run due schedules in tick failed', { error: String(err) });
+  }
+
+  // 4. Claim and process loop
   while (Date.now() < deadline) {
     let jobs: Job[] = [];
     try {
