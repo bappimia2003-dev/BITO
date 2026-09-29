@@ -9,9 +9,16 @@ interface ReauthModalProps {
   onSuccess: () => void;
   onCancel: () => void;
   hasPassword?: boolean;
+  actionDescription?: string;
 }
 
-export function ReauthModal({ isOpen, onSuccess, onCancel, hasPassword = true }: ReauthModalProps) {
+export function ReauthModal({
+  isOpen,
+  onSuccess,
+  onCancel,
+  hasPassword = true,
+  actionDescription,
+}: ReauthModalProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -75,7 +82,9 @@ export function ReauthModal({ isOpen, onSuccess, onCancel, hasPassword = true }:
           <div>
             <h3 className="font-semibold text-base">Confirm Authentication</h3>
             <p className="text-xs text-muted-foreground">
-              This action requires recent verification
+              {actionDescription
+                ? `To ${actionDescription}, please verify your identity.`
+                : 'This action requires recent verification'}
             </p>
           </div>
         </div>

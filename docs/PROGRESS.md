@@ -186,3 +186,70 @@
 ### Deviations From Spec
 
 - None.
+
+---
+
+## Phase 3 — Projects, roles & app shell
+
+### Plan (<= 15 lines)
+
+1. Extend projects repo with update, member management (add, update role, remove), and ownership checks.
+2. Extend workflows repo with update, duplicate workflow (copying nodes/connections/settings), and delete.
+3. Implement Projects API routes: GET/POST /api/projects, GET/PATCH/DELETE /api/projects/[id].
+4. Implement Project Members API routes: GET/POST/PATCH/DELETE /api/projects/[id]/members.
+5. Implement Workflows API routes: GET/POST /api/projects/[id]/workflows, GET/PATCH/DELETE /api/workflows/[id], POST /api/workflows/[id]/duplicate.
+6. Implement Audit API route: GET /api/projects/[id]/audit (owner-only cursor-based paginated logs).
+7. Build authenticated App Shell layout with responsive drawer (usable at 375px), sidebar, top bar, theme toggle.
+8. Build /projects page with project cards, role badges, and create project modal.
+9. Build /projects/[id]/workflows list page with status badges, create, rename, duplicate, and delete flows.
+10. Build /projects/[id]/settings page with members management, audit log viewer, and danger zone.
+11. Write integration test suite: IDOR matrix tests, role permission matrix tests, member CRUD, and duplicate workflow.
+12. Run Phase 3 gate (pnpm verify), verify 375px mobile responsiveness, update PROGRESS.md, and send report.
+
+### Status
+
+- GREEN
+
+### Built
+
+- Projects & Workflows Repositories:
+  - `apps/web/src/server/repositories/projects.ts`: Project CRUD, user projects with role annotations, member management (add by email, update role, remove member), sole-owner demote/delete defenses.
+  - `apps/web/src/server/repositories/workflows.ts`: Workflow CRUD, list workflows with subquery for last execution status, duplicate workflow cloning all nodes and connections with mapped IDs, safe JSON preprocessing for connection pooler text mode.
+  - `db/migrations/0009_audit_cascade_fix.sql`: Refined `audit_logs_immutable` trigger allowing foreign key `ON DELETE SET NULL` cascading from deleted projects/users while maintaining strict immutability against tampering or direct deletions.
+- API Endpoints:
+  - `GET /api/projects`: list user projects with roles
+  - `POST /api/projects`: create project, assigns owner role, records audit log
+  - `GET /api/projects/[id]`: get project by ID (role: viewer)
+  - `PATCH /api/projects/[id]`: update project name (role: editor), records audit log
+  - `DELETE /api/projects/[id]`: delete project (role: owner, requireRecentAuth: true), records audit log
+  - `GET /api/projects/[id]/members`: list project members (role: viewer)
+  - `POST /api/projects/[id]/members`: add member by email (role: owner), records audit log
+  - `PATCH /api/projects/[id]/members`: update member role (role: owner), records audit log
+  - `DELETE /api/projects/[id]/members`: remove member (role: owner or self, requireRecentAuth: true), records audit log
+  - `GET /api/projects/[id]/workflows`: list workflows with last run status (role: viewer)
+  - `POST /api/projects/[id]/workflows`: create workflow (role: editor), records audit log
+  - `GET /api/workflows/[id]`: get workflow (viewer)
+  - `PATCH /api/workflows/[id]`: update workflow (editor), records audit log
+  - `DELETE /api/workflows/[id]`: delete workflow (editor), records audit log
+  - `POST /api/workflows/[id]/duplicate`: duplicate workflow with nodes and connections (editor), records audit log
+  - `GET /api/projects/[id]/audit`: cursor-paginated audit trail (owner only)
+- Authenticated App Shell & UI Pages:
+  - App Shell Layout (`apps/web/src/app/(app)/layout.tsx`): authenticated shell with desktop sidebar, top bar, and slide-over mobile drawer (< 768px). Verified usable on 375px mobile viewports.
+  - Theme Toggle (`apps/web/src/components/layout/ThemeToggle.tsx`): dark / light / system modes.
+  - Sidebar & Header (`apps/web/src/components/layout/AppSidebar.tsx`, `AppHeader.tsx`, `MobileDrawer.tsx`): breadcrumb navigation, project context links, user profile, sign out.
+  - Projects Page (`apps/web/src/app/(app)/projects/page.tsx`): project cards, role badges (`owner`, `editor`, `viewer`), creation date, create project modal.
+  - Workflows List Page (`apps/web/src/app/(app)/projects/[id]/workflows/page.tsx` & `WorkflowModals.tsx`): workflows table, status badges (`draft`, `active`), last execution status, actions menu (open editor, rename modal, duplicate, delete with confirmation).
+  - Project Settings Page (`apps/web/src/app/(app)/projects/[id]/settings/page.tsx`, `MembersManager.tsx`, `AuditLogViewer.tsx`): general settings (rename), team members management, owner audit trail with pagination, danger zone delete project with name confirmation and `ReauthModal` step-up integration.
+- Tests & Verification:
+  - `tests/helpers/phase3Helpers.ts`: test user registration, request builder, project and workflow setup helper.
+  - `tests/integration/phase3_projects_workflows.test.ts`: 5 comprehensive integration tests covering complete IDOR matrix, viewer vs editor vs owner RBAC matrix, workflow duplication with node/connection cloning, member management with sole-owner defense, audit log verification, and project deletion.
+  - All 26/26 tests passing across 4 integration suites.
+  - Next.js production build cleanly compiles 31 routes.
+
+### Known Issues / Not Done
+
+- None.
+
+### Deviations From Spec
+
+- None.
