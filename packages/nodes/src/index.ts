@@ -1,6 +1,7 @@
 export * from './registry.js';
 export * from './triggers/manual/index.js';
 export * from './triggers/webhook/index.js';
+export * from './triggers/schedule/index.js';
 export * from './data/set/index.js';
 export * from './logic/if/index.js';
 export * from './logic/noop/index.js';

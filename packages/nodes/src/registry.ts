@@ -1,6 +1,7 @@
 import { defaultNodeRegistry, NodeRegistry } from '@bito/engine';
 import { manualTriggerNode } from './triggers/manual/index.js';
 import { webhookTriggerNode } from './triggers/webhook/index.js';
+import { scheduleTriggerNode } from './triggers/schedule/index.js';
 import { setNode } from './data/set/index.js';
 import { ifNode } from './logic/if/index.js';
 import { noopNode } from './logic/noop/index.js';
@@ -14,6 +15,7 @@ import { telegramSendNode } from './notification/telegram/index.js';
 export const allStandardNodes = [
   manualTriggerNode,
   webhookTriggerNode,
+  scheduleTriggerNode,
   setNode,
   ifNode,
   noopNode,
