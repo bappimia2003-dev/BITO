@@ -68,13 +68,7 @@ describe('trigger.schedule Node Definition', () => {
         },
       },
     ];
-    const ctx = {
-      executionId: 'exec-1',
-      nodeId: 'node-1',
-      nodeKey: 'schedule',
-      projectId: 'proj-1',
-      attempt: 1,
-    };
+    const ctx = {} as never;
 
     const result = await scheduleTriggerNode.execute(ctx, inputItems, {
       cron: '0 9 * * *',

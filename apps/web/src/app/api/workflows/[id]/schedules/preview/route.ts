@@ -16,11 +16,7 @@ export const POST = withRoute(
     body: previewSchema,
   },
   async ({ body }) => {
-    const occurrences = getNextOccurrences(
-      body.cron,
-      body.timezone ?? 'UTC',
-      body.count ?? 5
-    );
+    const occurrences = getNextOccurrences(body.cron, body.timezone ?? 'UTC', body.count ?? 5);
     return Response.json({ occurrences });
   }
 );

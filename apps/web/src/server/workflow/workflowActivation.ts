@@ -59,7 +59,7 @@ export async function activateWorkflow(
   return await sql.begin(async (tx) => {
     // 2. Create version snapshot (purpose='activation')
     const versionNumRows = await tx`
-      SELECT COALESCE(MAX(version_num), 0) + 1 as next_num
+      SELECT COALESCE(MAX(version), 0) + 1 as next_num
       FROM workflow_versions
       WHERE workflow_id = ${workflowId}
     `;
@@ -68,7 +68,7 @@ export async function activateWorkflow(
 
     await tx`
       INSERT INTO workflow_versions (
-        id, workflow_id, version_num, snapshot, purpose, created_by
+        id, workflow_id, version, snapshot, purpose, created_by
       ) VALUES (
         ${versionId}, ${workflowId}, ${versionNum}, ${sql.json(snapshot as never)}, 'activation', ${actor.userId}
       )

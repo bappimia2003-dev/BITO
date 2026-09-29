@@ -153,3 +153,29 @@
   - Prettier & ESLint passing with 0 errors/warnings.
   - Secret scan passing with 0 secrets detected.
   - Every file in the repository strictly $\le 400$ lines.
+
+---
+
+## Phase 8 — Webhooks & scheduler
+
+- **Status**: GREEN
+- **Completed**: 2026-09-29
+- **Built**:
+  - `trigger.schedule` node (`packages/nodes/src/triggers/schedule/index.ts`): 5-field cron parsing via `cron-parser` v5 (`CronExpressionParser.parse`), IANA timezone validation, config schema with Zod, 5 unit tests passing.
+  - Scheduler engine (`apps/web/src/server/scheduler/scheduleService.ts`): `nextOccurrence`, `getNextOccurrences` (preview next-N runs), `runDueSchedules` with Postgres `FOR UPDATE OF s SKIP LOCKED` for concurrent worker safety and outage coalescing (base from `max(now, scheduledFor)` prevents backlog).
+  - Workflow activation/deactivation service (`apps/web/src/server/workflow/workflowActivation.ts`): Section 8.12 flow — graph validation (rejects workflows with errors), immutable `workflow_versions` snapshot (purpose=`activation`), webhook endpoint provisioning, schedule record upsert, atomic status toggle, audit logging.
+  - Webhook repository (`apps/web/src/server/repositories/webhooks.ts`): full CRUD with AES-256-GCM encrypted secrets (AAD bound to endpoint `id`), `findWebhookByToken` with workflow status join, `recordWebhookEvent` dedup via `ON CONFLICT DO NOTHING`, `upsertWebhookEndpoint`, `rotateWebhookTokenAndSecret`, `listWebhooksForWorkflow` with decrypted secrets.
+  - Schedule repository (`apps/web/src/server/repositories/schedules.ts`): `upsertSchedule` with `ON CONFLICT (workflow_id, node_id) DO UPDATE`, `disableSchedulesForWorkflow`, `listSchedulesForWorkflow`, `listDueSchedules`.
+  - Webhook ingestion route (`/api/hooks/[token]/route.ts`): Section 11 10-step pipeline — dual rate limiting (120/min per token + 600/min per IP), token lookup with active status check, HTTP method enforcement (405), 1MB payload cap (413), HMAC-SHA256 signature verification with 300s replay window (401), `Idempotency-Key` + signature-hash dedup, JSON parsing (400), request normalization to `Item`, `startExecution` dispatch (mode=`trigger`), background `runTick`.
+  - API routes: `POST /api/workflows/:id/activate`, `POST /api/workflows/:id/deactivate`, `GET /api/workflows/:id/webhooks`, `POST /api/workflows/:id/webhooks/:endpointId/rotate`, `GET /api/workflows/:id/schedules/preview`.
+  - Editor UI updates: activate/deactivate toggle in `EditorToolbar.tsx` with API calls, `WebhookConfigDetails.tsx` (webhook URL display, HMAC curl snippet, secret rotation button), `ScheduleConfigDetails.tsx` (next-5-runs preview from backend).
+- **Verification**:
+  - 145/145 unit tests passing (5 new schedule node tests).
+  - 88/88 integration tests passing against live Supabase PostgreSQL:
+    - `phase8_activation.test.ts` (3 tests): validation rejection, activation snapshot, deactivation.
+    - `phase8_webhooks.test.ts` (13 tests): endpoint provisioning, method check, unknown token, payload size, signature verification (missing, expired, tampered, valid), dedup/replay, idempotency key, malformed JSON, token rotation, deactivation.
+    - `phase8_scheduler.test.ts` (8 tests): timezone/DST (Dhaka + NY), invalid format rejection, next-N preview, activation, dispatch, outage coalescing, `FOR UPDATE SKIP LOCKED` concurrency, deactivation.
+  - Next.js production build succeeded.
+  - TypeScript strict check, ESLint + Prettier passing with 0 errors.
+  - Secret scan passing with 0 secrets detected.
+  - Every file in the repository strictly $\le 400$ lines.

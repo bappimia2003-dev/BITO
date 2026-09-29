@@ -25,18 +25,12 @@ export function isValidIanaTimeZone(tz: string): boolean {
 }
 
 export const scheduleTriggerConfigSchema = z.object({
-  cron: z
-    .string()
-    .default('0 * * * *')
-    .refine(isValidCronExpression, {
-      message: 'Must be a valid 5-field cron expression (sub-minute is not allowed)',
-    }),
-  timezone: z
-    .string()
-    .default('UTC')
-    .refine(isValidIanaTimeZone, {
-      message: 'Must be a valid IANA timezone name (e.g. UTC, Asia/Dhaka, America/New_York)',
-    }),
+  cron: z.string().default('0 * * * *').refine(isValidCronExpression, {
+    message: 'Must be a valid 5-field cron expression (sub-minute is not allowed)',
+  }),
+  timezone: z.string().default('UTC').refine(isValidIanaTimeZone, {
+    message: 'Must be a valid IANA timezone name (e.g. UTC, Asia/Dhaka, America/New_York)',
+  }),
 });
 
 export type ScheduleTriggerConfig = z.infer<typeof scheduleTriggerConfigSchema>;
@@ -45,8 +39,7 @@ export const scheduleTriggerNode: NodeDefinition<ScheduleTriggerConfig> = {
   type: 'trigger.schedule',
   version: 1,
   name: 'Schedule Trigger',
-  description:
-    'Triggers workflow executions on a recurring cron schedule with timezone awareness.',
+  description: 'Triggers workflow executions on a recurring cron schedule with timezone awareness.',
   category: 'TRIGGERS',
   icon: 'clock',
   inputs: [],
