@@ -1,7 +1,22 @@
+import { resolve } from 'node:path';
 import { z } from 'zod';
 import { BitoError } from '@bito/shared';
 
+// Attempt to load .env from current directory or monorepo root if running locally
+try {
+  if (typeof process.loadEnvFile === 'function') {
+    try {
+      process.loadEnvFile();
+    } catch {
+      process.loadEnvFile(resolve(process.cwd(), '../../.env'));
+    }
+  }
+} catch {
+  // Ignore if .env is missing
+}
+
 const isProduction = process.env.NODE_ENV === 'production';
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
 
 const encryptionKeyValidator = z.string().refine(
   (val) => {
@@ -61,23 +76,26 @@ export function validateEnv(customEnv?: Record<string, string | undefined>): Env
     );
   }
 
-  // Provide development/test defaults if running outside production and vars are unset
+  // Provide development/test/build defaults if outside production or during Next.js static build phase
+  const allowDevDefaults = !isProduction || isBuildPhase;
+
   const target: Record<string, unknown> = {
     DATABASE_URL:
       source.DATABASE_URL ||
-      (isProduction ? undefined : 'postgresql://postgres:postgres@localhost:5432/bito'),
+      (allowDevDefaults ? 'postgresql://postgres:postgres@localhost:5432/bito' : undefined),
     DATABASE_URL_MIGRATE:
       source.DATABASE_URL_MIGRATE ||
-      (isProduction ? undefined : 'postgresql://postgres:postgres@localhost:5432/bito'),
-    APP_URL: source.APP_URL || (isProduction ? undefined : 'http://localhost:3000'),
+      (allowDevDefaults ? 'postgresql://postgres:postgres@localhost:5432/bito' : undefined),
+    APP_URL: source.APP_URL || (allowDevDefaults ? 'http://localhost:3000' : undefined),
     CREDENTIAL_ENCRYPTION_KEY:
       source.CREDENTIAL_ENCRYPTION_KEY ||
-      (isProduction ? undefined : 'k8Fw0nZ/bYJ7f8u5+qR7aA3wE1yU9vX2tC6sN4mP0lI='), // 32-byte dummy base64
+      (allowDevDefaults ? 'k8Fw0nZ/bYJ7f8u5+qR7aA3wE1yU9vX2tC6sN4mP0lI=' : undefined),
     CRON_SECRET:
-      source.CRON_SECRET || (isProduction ? undefined : 'dev_cron_secret_at_least_16_chars'),
-    WEBAUTHN_RP_ID: source.WEBAUTHN_RP_ID || (isProduction ? undefined : 'localhost'),
-    WEBAUTHN_RP_NAME: source.WEBAUTHN_RP_NAME || (isProduction ? undefined : 'BITO'),
-    WEBAUTHN_ORIGIN: source.WEBAUTHN_ORIGIN || (isProduction ? undefined : 'http://localhost:3000'),
+      source.CRON_SECRET || (allowDevDefaults ? 'dev_cron_secret_at_least_16_chars' : undefined),
+    WEBAUTHN_RP_ID: source.WEBAUTHN_RP_ID || (allowDevDefaults ? 'localhost' : undefined),
+    WEBAUTHN_RP_NAME: source.WEBAUTHN_RP_NAME || (allowDevDefaults ? 'BITO' : undefined),
+    WEBAUTHN_ORIGIN:
+      source.WEBAUTHN_ORIGIN || (allowDevDefaults ? 'http://localhost:3000' : undefined),
     SUPABASE_URL: source.SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: source.SUPABASE_SERVICE_ROLE_KEY,
     ALLOW_REGISTRATION: source.ALLOW_REGISTRATION,
