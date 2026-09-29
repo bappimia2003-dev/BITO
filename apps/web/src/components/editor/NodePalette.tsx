@@ -8,9 +8,12 @@ import type { NodeDefinitionMeta } from './types.js';
 const CATEGORY_ORDER: Array<NodeDefinitionMeta['category']> = [
   'TRIGGERS',
   'DATA',
-  'FLOW',
-  'INTEGRATIONS',
+  'LOGIC',
+  'API',
   'AI',
+  'DATABASE',
+  'FILES',
+  'NOTIFICATION',
   'UTILITY',
 ];
 
@@ -20,12 +23,14 @@ function getCategoryIcon(cat: string) {
       return <Zap className="h-3.5 w-3.5 text-amber-500" />;
     case 'DATA':
       return <Database className="h-3.5 w-3.5 text-cyan-500" />;
-    case 'FLOW':
+    case 'LOGIC':
       return <GitBranch className="h-3.5 w-3.5 text-orange-500" />;
-    case 'INTEGRATIONS':
+    case 'API':
       return <Globe className="h-3.5 w-3.5 text-blue-500" />;
     case 'AI':
       return <Bot className="h-3.5 w-3.5 text-purple-500" />;
+    case 'NOTIFICATION':
+      return <Zap className="h-3.5 w-3.5 text-green-500" />;
     default:
       return <Sliders className="h-3.5 w-3.5 text-slate-400" />;
   }

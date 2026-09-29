@@ -10,12 +10,14 @@ function getIcon(category: string) {
       return <Zap className="h-4 w-4 text-amber-500" />;
     case 'DATA':
       return <Database className="h-4 w-4 text-cyan-500" />;
-    case 'FLOW':
+    case 'LOGIC':
       return <GitBranch className="h-4 w-4 text-orange-500" />;
-    case 'INTEGRATIONS':
+    case 'API':
       return <Globe className="h-4 w-4 text-blue-500" />;
     case 'AI':
       return <Bot className="h-4 w-4 text-purple-500" />;
+    case 'NOTIFICATION':
+      return <Zap className="h-4 w-4 text-green-500" />;
     default:
       return <Sliders className="h-4 w-4 text-slate-400" />;
   }

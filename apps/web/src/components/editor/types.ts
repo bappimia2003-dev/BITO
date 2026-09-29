@@ -44,7 +44,16 @@ export interface NodeDefinitionMeta {
   version: number;
   name: string;
   description: string;
-  category: 'TRIGGERS' | 'DATA' | 'FLOW' | 'INTEGRATIONS' | 'AI' | 'UTILITY';
+  category:
+    | 'TRIGGERS'
+    | 'LOGIC'
+    | 'AI'
+    | 'DATA'
+    | 'API'
+    | 'DATABASE'
+    | 'FILES'
+    | 'NOTIFICATION'
+    | 'UTILITY';
   inputs: Array<{ portId: string; label: string; mode?: string }>;
   outputs: Array<{ portId: string; label: string; mode?: string }>;
   fields: Array<{

@@ -52,7 +52,7 @@ export default function WorkflowEditorPage() {
         const catData = catRes.ok ? await catRes.json() : { catalog: [] };
 
         const catalogMap: Record<string, NodeDefinitionMeta> = {};
-        for (const item of catData.catalog || []) {
+        for (const item of catData.nodes || []) {
           catalogMap[item.type] = item;
         }
 
