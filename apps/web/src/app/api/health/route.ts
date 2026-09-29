@@ -1,6 +1,6 @@
 export const runtime = 'nodejs';
 
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server.js';
 import { getDb } from '@/server/db/client';
 
 export async function GET() {

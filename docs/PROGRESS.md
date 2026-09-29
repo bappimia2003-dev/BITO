@@ -117,3 +117,72 @@
 ### Deviations From Spec
 
 - None.
+
+---
+
+## Phase 2 — Authentication
+
+### Plan (<= 15 lines)
+
+1. Implement password utilities: argon2id hashing/verify, min-10 char check, top-common password list, dummy hash timing equalization.
+2. Implement session management: 32-byte random token, sha256 hash storage, 7-day idle sliding / 30-day absolute expiration, secure cookie helpers.
+3. Implement WebAuthn passkey helpers using @simplewebauthn/server: single-use 5-min challenge, registration & verification, counter checks.
+4. Implement re-authentication helper: requireRecentAuth(maxAgeSec = 300) and session last_auth_at updates for sensitive actions.
+5. Implement login throttling: 5 failed attempts per (email, IP) per 15 min returning 429 and auth audit events.
+6. Implement auth API routes: /api/auth/register, /login, /logout, /logout-all, /reauth, /me.
+7. Implement passkey API routes: register options/verify, login options/verify, reauth options/verify, passkeys list/delete.
+8. Wire withRoute to authenticate session cookies, attach user to context, and enforce requireRecentAuth.
+9. Build auth and security UI: /login, /register, and /settings/security (passkey management, password change).
+10. Build test software authenticator and tests for all Section 14.5 cases (CSRF, throttling, expiry, re-auth, passkeys, IDOR, ALLOW_REGISTRATION).
+11. Run Phase 2 gate (pnpm verify + integration tests), verify manual browser flow, update PROGRESS.md, and send report.
+
+### Status
+
+- GREEN
+
+### Built
+
+- Password security:
+  - Argon2id password hashing and constant-time verification (`apps/web/src/server/auth/passwords.ts`)
+  - Minimum 10-character length policy and rejection of top-1000 common passwords (`apps/web/src/server/auth/commonPasswords.ts`)
+  - Constant-time dummy verification (`dummyVerifyPassword`) to eliminate user-enumeration timing oracles
+- Session management:
+  - 32-byte cryptographically secure random session tokens, SHA-256 hashed in database (`apps/web/src/server/repositories/sessions.ts`)
+  - Sliding 7-day idle expiration and 30-day absolute expiration computed via Postgres `NOW()` SQL expressions to prevent client/server clock skew
+  - Secure HTTP-only cookies (`__Host-bito_session` in production, `bito_session` in dev) with `SameSite=Lax` and path `/` (`apps/web/src/server/auth/cookies.ts`)
+  - Session revocation (`revokeSession`, `revokeAllUserSessions`) and `last_auth_at` tracking
+- WebAuthn Passkeys:
+  - Passkey registration, authentication, and re-authentication via `@simplewebauthn/server` (`apps/web/src/server/auth/passkeyRegistration.ts`, `passkeyAuth.ts`, `webauthnService.ts`)
+  - 5-minute single-use cryptographic challenges stored in DB with SQL `NOW()` expiration (`apps/web/src/server/repositories/webauthn.ts`)
+  - Sign counter tracking and rollback regression rejection
+  - Last-login-method defense preventing users from deleting their sole login credential
+- Security & Middleware:
+  - Re-authentication enforcement (`requireRecentAuth(300)`) returning 401 `REAUTH_REQUIRED` for sensitive operations (`apps/web/src/server/auth/recentAuth.ts`)
+  - Login rate throttling: 5 failed attempts per (email, IP) within 15 minutes triggering 429 `RATE_LIMITED` (`apps/web/src/server/auth/throttle.ts`)
+  - CSRF origin validation against trusted host / Origin headers in `withRoute.ts`
+  - Unified HTTP route wrapper `withRoute` resolving session, checking recent-auth, and enforcing project RBAC
+- Auth & Passkey API Endpoints:
+  - `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `POST /api/auth/logout-all`, `POST /api/auth/reauth`, `GET /api/auth/me`, `POST /api/auth/change-password`
+  - `POST /api/auth/passkey/register/options`, `POST /api/auth/passkey/register/verify`
+  - `POST /api/auth/passkey/login/options`, `POST /api/auth/passkey/login/verify`
+  - `POST /api/auth/passkey/reauth/options`, `POST /api/auth/passkey/reauth/verify`
+  - `GET /api/auth/passkeys`, `DELETE /api/auth/passkeys/[id]`
+- UI & Client Integration:
+  - Browser WebAuthn client wrapper (`apps/web/src/lib/passkeyClient.ts`)
+  - Login page (`/login`) with dual password and passkey sign-in flows
+  - Registration page (`/register`) supporting password and passkey-only onboarding, with post-registration passkey promotion
+  - Security settings page (`/settings/security`) with passkey list/add/delete, password change, and global session signout
+  - Interactive re-auth modal component (`apps/web/src/components/auth/ReauthModal.tsx`) for step-up auth
+- Tests & Verification:
+  - Software authenticator helper (`tests/helpers/softwareAuthenticator.ts`) creating valid ES256 attestation and assertion signatures
+  - Section 14.5 test matrix: 9 password & session integration tests (`tests/integration/phase2_auth.test.ts`) + 7 passkey integration tests (`tests/integration/phase2_passkeys.test.ts`)
+  - All 21/21 integration tests passing against live Supabase PostgreSQL
+  - Full Next.js production build (`pnpm verify`) passes cleanly with 22 routes generated
+
+### Known Issues / Not Done
+
+- None.
+
+### Deviations From Spec
+
+- None.

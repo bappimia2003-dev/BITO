@@ -51,6 +51,8 @@ export async function recordAuditLog(entry: {
   `;
 }
 
+export const writeAuditLog = recordAuditLog;
+
 export async function listAuditLogs(
   projectId: string,
   cursor?: string,

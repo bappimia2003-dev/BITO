@@ -55,3 +55,25 @@ export async function createUser(data: {
   if (!row) throw new Error('Failed to create user');
   return parseRow(userSchema, row);
 }
+
+export async function countUsers(): Promise<number> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT COUNT(*)::int AS count
+    FROM users
+  `;
+  return Number(rows[0]?.count ?? 0);
+}
+
+export async function updateUserPassword(
+  userId: string,
+  passwordHash: string | null
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE users
+    SET password_hash = ${passwordHash},
+        updated_at = NOW()
+    WHERE id = ${userId}
+  `;
+}
