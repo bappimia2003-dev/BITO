@@ -35,6 +35,7 @@ const envSchema = z.object({
   DATABASE_URL_MIGRATE: z.string().min(1, 'DATABASE_URL_MIGRATE is required').optional(),
   APP_URL: z.string().url('APP_URL must be a valid URL'),
   CREDENTIAL_ENCRYPTION_KEY: encryptionKeyValidator,
+  CREDENTIAL_ENCRYPTION_KEY_V2: encryptionKeyValidator.optional(),
   CRON_SECRET: z.string().min(16, 'CRON_SECRET must be at least 16 chars'),
   WEBAUTHN_RP_ID: z.string().min(1, 'WEBAUTHN_RP_ID is required'),
   WEBAUTHN_RP_NAME: z.string().min(1, 'WEBAUTHN_RP_NAME is required'),
@@ -90,6 +91,7 @@ export function validateEnv(customEnv?: Record<string, string | undefined>): Env
     CREDENTIAL_ENCRYPTION_KEY:
       source.CREDENTIAL_ENCRYPTION_KEY ||
       (allowDevDefaults ? 'k8Fw0nZ/bYJ7f8u5+qR7aA3wE1yU9vX2tC6sN4mP0lI=' : undefined),
+    CREDENTIAL_ENCRYPTION_KEY_V2: source.CREDENTIAL_ENCRYPTION_KEY_V2,
     CRON_SECRET:
       source.CRON_SECRET || (allowDevDefaults ? 'dev_cron_secret_at_least_16_chars' : undefined),
     WEBAUTHN_RP_ID: source.WEBAUTHN_RP_ID || (allowDevDefaults ? 'localhost' : undefined),

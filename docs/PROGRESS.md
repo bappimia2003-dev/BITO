@@ -250,6 +250,103 @@
 
 - None.
 
+---
+
+## Phase 4 — Credential manager + Variables
+
+### Plan (<= 15 lines)
+
+1. Implement crypto.ts (AES-256-GCM, random 12-byte IV, AAD = credentialId, key rotation by version).
+2. Write crypto unit tests (roundtrip, tamper detection, wrong AAD, unique IVs, key rotation).
+3. Implement credential types/schemas, masking logic (maskSecret), and secret payload validators.
+4. Expand credentials.ts repository (CRUD, replace secret, dependencies lookup, usedByCount, project isolation).
+5. Implement credential test runners in credentialTesters.ts (Telegram, Gemini, HTTP, etc. with safe redaction).
+6. Implement credentials API routes: GET/POST /api/credentials, GET/PATCH/DELETE /api/credentials/[id], GET /api/credentials/[id]/dependencies, POST /api/credentials/[id]/test.
+7. Expand variables.ts repository (global/project/workflow scope CRUD, key format check, project isolation).
+8. Implement variables API routes: GET/POST /api/variables, PATCH/DELETE /api/variables/[id].
+9. Build UI for Credentials: /projects/[id]/credentials (list, type forms, masked hints, replace, test, delete + re-auth modal).
+10. Build UI for Variables: /projects/[id]/variables (scoped tabs: global, project, workflow; JSON object editor; search).
+11. Build integration test suite: Section 13 tests, JSON snapshot test (0 secrets in responses), 409 dependency rejection, variables CRUD & IDOR.
+12. Run Phase 4 gate (pnpm verify), update docs/PROGRESS.md and docs/DECISIONS.md, and generate Phase 4 report.
+
+### Status
+
+- GREEN
+
+### Built
+
+- Crypto Subsystem (`apps/web/src/server/security/crypto.ts`):
+  - AES-256-GCM authenticated encryption with random 12-byte IV per encryption operation.
+  - Additional Authenticated Data (AAD) bound to `credentialId` to cryptographically prevent ciphertext transplantation between records.
+  - Multi-version key rotation support (`CREDENTIAL_ENCRYPTION_KEY` as v1, `CREDENTIAL_ENCRYPTION_KEY_V2` as v2, with backward compatibility).
+  - Rejection of tampered ciphertexts, altered auth tags, and unauthenticated/unsupported key versions.
+  - Unit tests (`apps/web/tests/crypto.test.ts`): 7 tests covering roundtrip, unique IVs, tamper detection, wrong AAD rejection, and key rotation.
+- Credential Schemas & Types (`apps/web/src/server/repositories/credentialSchemas.ts`):
+  - Supported credential types: `telegramBot`, `geminiApiKey`, `whatsappCloud`, `metaPage`, `googleOAuth`, `httpBearer`, `httpBasic`, `httpHeader`.
+  - Type-safe secret schemas validating required fields before encryption.
+  - `maskSecret`: Masks sensitive tokens displaying first 4 and last 4 characters separated by `...` (or `••••` for very short secrets).
+  - Masked hint generation for UI display without exposing actual secret values.
+- Credential Repository (`apps/web/src/server/repositories/credentials.ts`):
+  - CRUD operations with strict project isolation and role verification (`editor` or `owner`).
+  - Secret immutability: creation encrypts and stores payload; PATCH updates only metadata (`name`, `description`); `replaceCredentialSecret` is a dedicated method for updating secrets.
+  - `getCredentialDependencies`: Queries workflows and nodes referencing the credential.
+  - `deleteCredential`: Rejects with 409 `CREDENTIAL_IN_USE` if `used_by_count > 0` or referenced by any active/draft workflow node.
+  - Internal `getDecryptedCredentialPayload`: Server-side decryption for execution engine and testers; never exposed to API endpoints.
+- Credential Testers (`apps/web/src/server/services/credentialTesters.ts`):
+  - Safe connection test runners for `telegramBot`, `geminiApiKey`, `whatsappCloud`, `metaPage`, and `googleOAuth`.
+  - Enforces 10-second timeout on external checks and applies `redact()` to all incoming/outgoing log entries.
+- Credential API Routes:
+  - `GET /api/credentials?projectId=...`: Lists project credentials with masked hints and `usedByCount`.
+  - `POST /api/credentials`: Validates payload, encrypts with AAD, saves credential, requires recent authentication (`requireRecentAuth: true`), logs audit trail.
+  - `GET /api/credentials/[id]`: Returns credential metadata and masked hint (zero secrets leaked).
+  - `PATCH /api/credentials/[id]`: Updates name/description.
+  - `DELETE /api/credentials/[id]`: Requires recent auth, enforces 409 `CREDENTIAL_IN_USE` dependency check, logs audit trail.
+  - `GET /api/credentials/[id]/dependencies`: Returns workflows and nodes using this credential.
+  - `POST /api/credentials/[id]/test`: Tests credential connectivity, rate limited to 10 requests/minute per credential.
+- Variables Subsystem (`apps/web/src/server/repositories/variables.ts` & API Routes):
+  - Scopes: `global` (system-wide, restricted to owners), `project` (project-scoped), and `workflow` (workflow-scoped).
+  - Key name validation: Strictly enforces identifier pattern `^[A-Za-z_][A-Za-z0-9_]*$`.
+  - Serialization: Supports primitive values (string, number, boolean) and structured JSON objects/arrays.
+  - `GET /api/variables?projectId=...`: Lists variables across scopes.
+  - `POST /api/variables`: Creates variable with key format validation, duplicate key rejection, and audit logging.
+  - `PATCH /api/variables/[id]`: Updates variable value and description with audit logging.
+  - `DELETE /api/variables/[id]`: Deletes variable with audit logging.
+- Web UI for Credentials & Variables:
+  - `/projects/[id]/credentials` page:
+    - Lists credentials with masked hint badges, types, creation dates, and usage counts.
+    - Test connection button with loading states and real-time success/error alerts.
+    - Create credential modal with type-specific form fields and descriptions.
+    - Replace credential secret modal with re-auth step-up dialog.
+    - Delete credential modal with dependency warning and 409 conflict handling.
+  - `/projects/[id]/variables` page:
+    - Scope tabs (`Project`, `Workflow`, `Global`) and live key/value search filter.
+    - JSON-formatted value preview with type badges (`string`, `number`, `boolean`, `json`).
+    - Create variable modal with regex key validation and JSON format validator.
+    - Edit variable modal with type-aware input editor.
+    - Delete variable modal with confirmation.
+- Integration Test Suites:
+  - `tests/integration/phase4_credentials.test.ts`:
+    - Full CRUD with DB encryption and masked hint verification.
+    - Snapshot test strictly validating zero secrets or encryption keys leaked across any response.
+    - Re-auth gating enforcement on sensitive endpoints.
+    - 409 `CREDENTIAL_IN_USE` rejection on node-bound credentials.
+    - Connection test endpoint rate limiting (10/min).
+  - `tests/integration/phase4_variables.test.ts`:
+    - Scoped variables CRUD (project, workflow, global).
+    - Identifier naming regex validation.
+    - Rich JSON value storage and retrieval.
+    - Cross-project IDOR and role enforcement.
+  - Test runner hardening: Vitest configured with `fileParallelism: false` and unique per-request IP partitioning for reliable concurrency against Supabase.
+- Full Verification:
+  - 8/8 unit test files passed (23/23 tests).
+  - 6/6 integration test files passed (32/32 tests).
+  - Secret scanner clean: zero secrets in repo.
+  - Next.js production build succeeded with 39 routes generated.
+
+### Known Issues / Not Done
+
+- None.
+
 ### Deviations From Spec
 
 - None.

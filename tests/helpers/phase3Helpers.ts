@@ -19,7 +19,12 @@ export function makeReq(
   method = 'GET',
   body?: Record<string, unknown>
 ): Request {
-  const headers: Record<string, string> = { Cookie: cookie, Origin: env.APP_URL };
+  const randomIp = `192.168.${Math.floor(Math.random() * 200) + 1}.${Math.floor(Math.random() * 200) + 1}`;
+  const headers: Record<string, string> = {
+    Cookie: cookie,
+    Origin: env.APP_URL,
+    'x-forwarded-for': randomIp,
+  };
   if (body) headers['Content-Type'] = 'application/json';
   return new Request(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
 }
