@@ -37,6 +37,7 @@ export interface Execution {
   triggerPayload?: Item[];
   vars: Record<string, Json>;
   error?: Record<string, unknown>;
+  retryOfExecutionId?: string;
   nodeRunCount: number;
   createdAt: string;
   startedAt?: string;
@@ -123,6 +124,9 @@ export interface ExecutionStore {
     error?: Record<string, unknown>
   ): Promise<void>;
   cancelExecution(id: string): Promise<void>;
+  loadPriorNodeRuns?(executionId: string): Promise<NodeRun[]>;
+  updateExecutionVars?(id: string, vars: Record<string, Json>): Promise<void>;
+  markJobDone?(jobId: string): Promise<void>;
 }
 
 export * from './expressions/index.js';
@@ -131,3 +135,6 @@ export * from './retry/backoff.js';
 export * from './registry/nodeRegistry.js';
 export * from './validator/index.js';
 export * from './testing/index.js';
+export * from './runtime/processJob.js';
+export * from './runtime/buildScope.js';
+export * from './runtime/resolveConfig.js';

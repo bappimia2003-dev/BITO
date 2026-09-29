@@ -22,6 +22,7 @@ export class InMemoryExecutionStore implements ExecutionStore {
   public nodeRuns = new Map<string, NodeRun>();
   public scratch = new Map<string, Json>();
   public logs: unknown[] = [];
+  public clock?: { now(): Date };
 
   private scratchLocks = new Map<string, Promise<void>>();
 
@@ -56,7 +57,7 @@ export class InMemoryExecutionStore implements ExecutionStore {
   }
 
   public async claimJobs(workerId: string, limit: number, leaseMs: number): Promise<Job[]> {
-    const now = new Date();
+    const now = this.clock ? this.clock.now() : new Date();
     const readyJobs: Job[] = [];
 
     for (const job of this.jobs.values()) {
@@ -79,7 +80,7 @@ export class InMemoryExecutionStore implements ExecutionStore {
   }
 
   public async reclaimStaleJobs(): Promise<number> {
-    const now = new Date();
+    const now = this.clock ? this.clock.now() : new Date();
     let reclaimed = 0;
 
     for (const job of this.jobs.values()) {
@@ -116,6 +117,14 @@ export class InMemoryExecutionStore implements ExecutionStore {
   }
 
   public async startNodeRun(job: Job): Promise<NodeRun> {
+    if (job.kind === 'resume' && job.nodeRunId) {
+      const existing = this.nodeRuns.get(job.nodeRunId);
+      if (existing) {
+        existing.status = 'RUNNING';
+        return existing;
+      }
+    }
+
     const id = `nr_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     const nodeRun: NodeRun = {
       id,
@@ -224,10 +233,11 @@ export class InMemoryExecutionStore implements ExecutionStore {
 
     let hasActive = false;
     let hasWaiting = false;
+    const now = this.clock ? this.clock.now() : new Date();
 
     for (const j of this.jobs.values()) {
       if (j.executionId === executionId) {
-        if (j.status === 'ready' || j.status === 'running') {
+        if (j.status === 'running' || (j.status === 'ready' && new Date(j.runAt) <= now)) {
           hasActive = true;
           break;
         }
@@ -288,6 +298,30 @@ export class InMemoryExecutionStore implements ExecutionStore {
       if (nr.executionId === id && nr.status === 'WAITING') {
         nr.status = 'CANCELLED' as NodeRunStatus;
       }
+    }
+  }
+
+  public async loadPriorNodeRuns(executionId: string): Promise<NodeRun[]> {
+    const runs: NodeRun[] = [];
+    for (const nr of this.nodeRuns.values()) {
+      if (nr.executionId === executionId) {
+        runs.push(nr);
+      }
+    }
+    return runs;
+  }
+
+  public async updateExecutionVars(id: string, vars: Record<string, Json>): Promise<void> {
+    const exec = this.executions.get(id);
+    if (exec) {
+      exec.vars = { ...exec.vars, ...vars };
+    }
+  }
+
+  public async markJobDone(jobId: string): Promise<void> {
+    const job = this.jobs.get(jobId);
+    if (job) {
+      job.status = 'done';
     }
   }
 }

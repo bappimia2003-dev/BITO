@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import type { NodeDefinition, NodeContext, Item, NodeResult } from '@bito/shared';
+import {
+  BitoError,
+  type NodeDefinition,
+  type NodeContext,
+  type Item,
+  type NodeResult,
+} from '@bito/shared';
 
 export const httpNodeConfigSchema = z.object({
   method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']).default('GET'),
@@ -77,11 +83,51 @@ export const httpNode: NodeDefinition<HttpNodeConfig> = {
   execute: async (ctx: NodeContext, items: Item[], config: HttpNodeConfig): Promise<NodeResult> => {
     const results: Item[] = [];
 
+    // Check credentials if configured
+    const requestHeaders = { ...config.headers };
+    try {
+      const bearer = await ctx.getCredential<{ token: string }>('httpBearer');
+      if (bearer?.token) {
+        requestHeaders['Authorization'] = `Bearer ${bearer.token}`;
+      }
+    } catch {
+      // Credential not assigned or optional
+    }
+    try {
+      const basic = await ctx.getCredential<{ username: string; password: string }>('httpBasic');
+      if (basic?.username) {
+        const encoded = Buffer.from(`${basic.username}:${basic.password}`).toString('base64');
+        requestHeaders['Authorization'] = `Basic ${encoded}`;
+      }
+    } catch {
+      // Optional
+    }
+    try {
+      const headerCred = await ctx.getCredential<{ headerName: string; headerValue: string }>(
+        'httpHeader'
+      );
+      if (headerCred?.headerName) {
+        requestHeaders[headerCred.headerName] = headerCred.headerValue;
+      }
+    } catch {
+      // Optional
+    }
+
+    // Build URL with query params
+    let finalUrl = config.url;
+    if (Object.keys(config.query).length > 0) {
+      const parsedUrl = new URL(finalUrl);
+      for (const [k, v] of Object.entries(config.query)) {
+        parsedUrl.searchParams.set(k, v);
+      }
+      finalUrl = parsedUrl.toString();
+    }
+
     for (const _item of items) {
       const resp = await ctx.http.fetch({
-        url: config.url,
+        url: finalUrl,
         method: config.method,
-        headers: config.headers,
+        headers: requestHeaders,
         body: config.body,
         timeoutMs: config.timeoutMs,
       });
@@ -95,10 +141,19 @@ export const httpNode: NodeDefinition<HttpNodeConfig> = {
         }
       }
 
+      const is2xx = resp.status >= 200 && resp.status < 300;
+      if (!is2xx) {
+        const isRetryable = [408, 425, 429, 500, 502, 503, 504].includes(resp.status);
+        throw BitoError('HTTP_ERROR', `HTTP ${resp.status}: ${resp.body.slice(0, 200)}`, {
+          retryable: isRetryable,
+          details: { status: resp.status, body: responseData },
+        });
+      }
+
       results.push({
         json: {
           status: resp.status,
-          ok: resp.status >= 200 && resp.status < 300,
+          ok: true,
           headers: resp.headers,
           data: responseData as import('@bito/shared').Json,
         },
@@ -106,5 +161,12 @@ export const httpNode: NodeDefinition<HttpNodeConfig> = {
     }
 
     return { outputs: { main: results } };
+  },
+  onError: (_ctx, err) => {
+    const status = (err.details as { status?: number } | undefined)?.status;
+    if (status && [408, 425, 429, 500, 502, 503, 504].includes(status)) {
+      return { retryable: true };
+    }
+    return undefined;
   },
 };

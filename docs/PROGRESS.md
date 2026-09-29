@@ -1,6 +1,7 @@
 # BITO Build Progress
 
 ## Phase 0 — Bootstrap
+
 - **Status**: GREEN
 - **Built**:
   - pnpm workspace (`apps/web`, `packages/{shared,engine,integrations,nodes}`)
@@ -16,6 +17,7 @@
 ---
 
 ## Phase 1 — Database & repository foundation
+
 - **Status**: GREEN
 - **Built**:
   - Migrations 0001-0008: auth, projects, workflows, credentials, execution, files, webhooks, audit
@@ -29,6 +31,7 @@
 ---
 
 ## Phase 2 — Authentication
+
 - **Status**: GREEN
 - **Built**:
   - Argon2id password hashing, constant-time verification, min-10 chars, top-1000 blacklist, dummy timing equalization
@@ -43,6 +46,7 @@
 ---
 
 ## Phase 3 — Projects, roles & app shell
+
 - **Status**: GREEN
 - **Built**:
   - Project & workflow repositories: CRUD, member roles, duplicate workflow cloning nodes/connections, pooler text mode safety
@@ -55,6 +59,7 @@
 ---
 
 ## Phase 4 — Credential manager + Variables
+
 - **Status**: GREEN
 - **Built**:
   - AES-256-GCM encryption with random 12-byte IV, AAD bound to `credentialId`, versioned key rotation (`apps/web/src/server/security/crypto.ts`)
@@ -70,6 +75,7 @@
 ---
 
 ## Phase 5 — Pure core: types, expressions, registry, validator
+
 - **Status**: GREEN
 - **Built**:
   - Shared node domain types (`packages/shared/src/nodeTypes.ts`): `PortDef`, `NodeCategory`, `FieldDef`, `NodeSettings`, `NodeResult`, `NodeContext`, `Issue`, `GraphView`, `ToolSpec`, `AiStep`, `CatalogNode`, and `ConfigSchema<TConfig>` (Zod variance safe)
@@ -98,3 +104,16 @@
     - Catalog API route unit test (`apps/web/tests/catalog.test.ts`)
     - Line coverage > 91% across `packages/engine` (all subpackages ≥ 88.6%, delivery/registry/retry at 100%)
     - 124 unit tests + 33 integration tests passing
+
+- [x] **Phase 6: Engine core on Postgres + first nodes**
+  - Completed: 2026-09-29
+  - Deliverables:
+    - `SafeHttp` outbound HTTP client with multi-layer SSRF defense (`apps/web/src/server/security/safeHttp.ts`) blocking loopback, private ranges, RFC 6598 CGNAT, link-local metadata (169.254.169.254), IPv6 mapped IPv4, and re-validating redirects.
+    - SafeHttp test suite with 5 unit tests (`apps/web/tests/safeHttp.test.ts`).
+    - `PostgresExecutionStore` (`apps/web/src/server/engine-runtime/postgresExecutionStore.ts`) implementing `ExecutionStore` with `FOR UPDATE SKIP LOCKED` atomic job claiming, stale lease reclamation, scratch locking, and immutable audit logs.
+    - Pure engine job processor (`packages/engine/src/runtime/processJob.ts`, `buildScope.ts`, `resolveConfig.ts`, `handleError.ts`) supporting sequential execution, parallel branches, IF condition routing, wait/resume with clock advance, configurable retries with jittered backoff, error policies (`stop`, `continue`, `errorPort`), and `perItem` progress skipping on retry.
+    - Core execution triggers and endpoints: `startExecution`, `runTick`, `retryExecution`, `POST /api/engine/tick`, `POST /api/executions/:id/cancel`, `POST /api/executions/:id/retry`.
+    - Unit test suites: `processJob_basic.test.ts`, `processJob_lifecycle.test.ts`, `processJob_resilience.test.ts`, `processJob_errors.test.ts`.
+    - Live Postgres integration test suite (`tests/integration/phase6_engine.test.ts`): Idempotent job delivery, stale-lease reclamation, live outbound HTTP to `https://example.com` via `SafeHttp`, cancel execution endpoint, retry from failed execution endpoint.
+    - Live Postgres concurrency test suite (`tests/integration/phase6_concurrency.test.ts`): 4 parallel workers executing 20 jobs simultaneously verifying `FOR UPDATE SKIP LOCKED` with 0 duplicate executions and 0 deadlocks.
+    - Verification: 140 unit tests passing, 39 integration tests passing, zero secrets committed, all files strictly $\le 400$ lines.
