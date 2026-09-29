@@ -112,12 +112,27 @@ export class PostgresExecutionStore implements ExecutionStore {
       `;
       if (existing[0]) return mapNodeRun(existing[0]);
     }
+    const wfRows = await sql`
+      SELECT snapshot FROM workflow_versions WHERE id = (
+        SELECT version_id FROM executions WHERE id = ${job.executionId}
+      ) LIMIT 1
+    `;
+    let nodeKey = job.nodeId;
+    if (wfRows[0]?.snapshot) {
+      const snap =
+        typeof wfRows[0].snapshot === 'string'
+          ? JSON.parse(wfRows[0].snapshot)
+          : wfRows[0].snapshot;
+      const found = snap.nodes?.find((n: { id: string; key: string }) => n.id === job.nodeId);
+      if (found?.key) nodeKey = found.key;
+    }
+
     const rows = await sql`
       INSERT INTO node_runs (
         execution_id, node_id, node_key, status,
         attempt, input_port, input, queued_at, started_at
       ) VALUES (
-        ${job.executionId}, ${job.nodeId}, ${job.nodeId}, 'RUNNING',
+        ${job.executionId}, ${job.nodeId}, ${nodeKey}, 'RUNNING',
         ${job.attempt}, ${job.inputPort},
         ${JSON.stringify(job.input)}::jsonb,
         NOW(), NOW()

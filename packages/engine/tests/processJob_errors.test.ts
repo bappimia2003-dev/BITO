@@ -90,7 +90,7 @@ describe('Workflow Engine: Error Routing & Safety Limits', () => {
   });
 
   it('enforces maxNodeRuns safety cap', async () => {
-    const { store } = createTestFixture();
+    const { store, clock, registry, http, resolver } = createTestFixture();
     const versionId = 'v-cap';
 
     const snapshot: WorkflowSnapshot = {
@@ -131,13 +131,12 @@ describe('Workflow Engine: Error Routing & Safety Limits', () => {
         input: [{ json: {} }],
         deliveryKey: 'trigger:0',
         attempt: 1,
-        runAt: new Date().toISOString(),
+        runAt: clock.now().toISOString(),
       },
     ]);
 
     // Process job with maxNodeRuns = 1
     const jobs = await store.claimJobs('w1', 1, 60_000);
-    const { registry, http, resolver, clock } = createTestFixture();
     const { processJob } = await import('../src/runtime/processJob.js');
 
     await processJob(jobs[0]!, {

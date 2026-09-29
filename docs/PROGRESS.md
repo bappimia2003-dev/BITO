@@ -117,3 +117,39 @@
     - Live Postgres integration test suite (`tests/integration/phase6_engine.test.ts`): Idempotent job delivery, stale-lease reclamation, live outbound HTTP to `https://example.com` via `SafeHttp`, cancel execution endpoint, retry from failed execution endpoint.
     - Live Postgres concurrency test suite (`tests/integration/phase6_concurrency.test.ts`): 4 parallel workers executing 20 jobs simultaneously verifying `FOR UPDATE SKIP LOCKED` with 0 duplicate executions and 0 deadlocks.
     - Verification: 140 unit tests passing, 39 integration tests passing, zero secrets committed, all files strictly $\le 400$ lines.
+
+---
+
+## Phase 7 — Workflow editor UI + execution logs
+
+- **Status**: GREEN
+- **Completed**: 2026-09-29
+- **Built**:
+  - Interactive React Flow canvas (`@xyflow/react`) with custom node status indicators (`CustomWorkflowNode.tsx`), animated connection curves, 16px grid snapping, minimap, background dot grid, zoom/pan controls.
+  - Searchable, categorized node palette (`NodePalette.tsx`) with drag-and-drop and click-to-add support.
+  - Command palette quick-add modal (`QuickAddModal.tsx`, `/` or `Ctrl/Cmd+K`) for keyboard-driven canvas node creation.
+  - Full-featured node configuration drawer (`NodeConfigPanel.tsx`):
+    - Dynamic schema-driven form generator (`FormGenerator.tsx`) supporting text, textarea, number, select, boolean, JSON, and credential selectors.
+    - Expression input component (`ExpressionInput.tsx`) with `{}` toggle, autocomplete tokens (`{{input.`, `{{trigger.`, `{{nodes.<key>.json.`, `{{vars.`), and live expression preview against backend evaluation.
+    - Settings tab for retry count, backoff policy (`fixed`/`exponential`), error handling strategy (`stop`/`continue`/`errorPort`), timeout, and active/disabled toggle.
+    - Output inspector and execution trace view.
+  - State management & history:
+    - 50-step undo/redo stack (`useEditorHistory.ts`) with keyboard shortcuts (`Ctrl/Cmd+Z`, `Ctrl/Cmd+Y` / `Ctrl/Cmd+Shift+Z`).
+    - 1.5s debounced autosave with optimistic revision tracking (`useEditorAutosave.ts`).
+    - HTTP 409 conflict detection with interactive resolution modal (`ConflictModal.tsx`: "Reload latest" vs "Overwrite").
+  - Execution & debugging:
+    - Execution controller (`useEditorExecution.ts`) for starting, polling, and canceling workflow runs.
+    - Manual run modal (`RunModal.tsx`) with trigger node selector and test payload JSON editor.
+    - Collapsible execution logs drawer (`ExecutionLogsPanel.tsx`) with real-time status polling, timeline overview, execution history list, node run inspect pane, and full JSON payload viewer.
+  - Pages & API routes:
+    - Full-screen editor route: `/workflows/[id]/editor` and project redirect `/projects/[id]/workflows/[workflowId]/editor`.
+    - Project execution list route: `/projects/[id]/executions` with status filters and duration metrics.
+    - Single execution drill-down route: `/projects/[id]/executions/[execId]` with visual split layout.
+    - Backend endpoints: `GET/PATCH /api/workflows/:id`, `POST /api/workflows/:id/run`, `POST /api/workflows/:id/validate`, `POST /api/workflows/:id/expressions/preview`, `GET /api/executions/:id`, `GET /api/executions/:id/logs`, `GET /api/projects/:id/executions`.
+- **Verification**:
+  - 140/140 unit tests passing.
+  - 53/53 integration tests passing against live Supabase PostgreSQL (including `phase7_editor_api.test.ts` and `phase7_smoke.test.ts` with Manual + Set + IF end-to-end execution, cycle detection, connection validation, 409 conflict handling).
+  - Next.js production build succeeded (`28/28` routes generated).
+  - Prettier & ESLint passing with 0 errors/warnings.
+  - Secret scan passing with 0 secrets detected.
+  - Every file in the repository strictly $\le 400$ lines.

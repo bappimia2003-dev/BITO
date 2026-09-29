@@ -13,6 +13,9 @@ const IGNORED_DIRS = new Set([
 ]);
 
 const IGNORED_FILES = new Set([
+  '.env',
+  '.env.local',
+  '.env.test',
   '.env.example',
   'pnpm-lock.yaml',
   'package-lock.json',
@@ -54,7 +57,11 @@ async function scanDirectory(dir: string, baseDir: string): Promise<string[]> {
       const subViolations = await scanDirectory(fullPath, baseDir);
       violations.push(...subViolations);
     } else if (entry.isFile()) {
-      if (IGNORED_FILES.has(entry.name) || entry.name.endsWith('.pdf')) {
+      if (
+        IGNORED_FILES.has(entry.name) ||
+        entry.name.startsWith('.env') ||
+        entry.name.endsWith('.pdf')
+      ) {
         continue;
       }
 
