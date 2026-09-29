@@ -1,0 +1,10 @@
+node_modules
+.next
+dist
+build
+coverage
+pnpm-lock.yaml
+SPEC.md
+BITO_MASTER_PROMPT.pdf
+next-env.d.ts
+**/*.d.ts
