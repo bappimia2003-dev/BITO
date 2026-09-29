@@ -1,29 +1,30 @@
-import type { ExecutionMode, ExecutionStatus, Item, Json, NodeRunStatus } from '@bito/shared';
+import type {
+  ExecutionMode,
+  ExecutionStatus,
+  Item,
+  Json,
+  NodeRunStatus,
+  WorkflowSnapshot,
+} from '@bito/shared';
 
-export interface WorkflowSnapshotNode {
-  id: string;
-  key: string;
-  type: string;
-  typeVersion?: number;
-  name: string;
-  config: Record<string, unknown>;
-  credentialId?: string;
-  settings?: Record<string, unknown>;
-}
-
-export interface WorkflowSnapshotConnection {
-  id: string;
-  sourceNodeId: string;
-  sourcePort: string;
-  targetNodeId: string;
-  targetPort: string;
-}
-
-export interface WorkflowSnapshot {
-  nodes: WorkflowSnapshotNode[];
-  connections: WorkflowSnapshotConnection[];
-  settings: Record<string, unknown>;
-}
+export type {
+  WorkflowSnapshotNode,
+  WorkflowSnapshotConnection,
+  WorkflowSnapshot,
+  SafeHttpRequest,
+  SafeHttpResponse,
+  SafeHttp,
+  CatalogNode,
+  FieldDef,
+  Issue,
+  NodeCategory,
+  NodeContext,
+  NodeDefinition,
+  NodeResult,
+  NodeSettings,
+  PortDef,
+  ToolSpec,
+} from '@bito/shared';
 
 export interface Execution {
   id: string;
@@ -86,26 +87,6 @@ export interface CredentialResolver {
   resolve(projectId: string, credentialId: string): Promise<Record<string, unknown>>;
 }
 
-export interface SafeHttpRequest {
-  url: string;
-  method?: string;
-  headers?: Record<string, string>;
-  body?: string;
-  timeoutMs?: number;
-}
-
-export interface SafeHttpResponse {
-  status: number;
-  statusText: string;
-  headers: Record<string, string>;
-  body: string;
-  json<T = unknown>(): T;
-}
-
-export interface SafeHttp {
-  fetch(req: SafeHttpRequest): Promise<SafeHttpResponse>;
-}
-
 export interface ScratchHandle {
   get(): Promise<Json | null>;
   set(val: Json): Promise<void>;
@@ -143,3 +124,10 @@ export interface ExecutionStore {
   ): Promise<void>;
   cancelExecution(id: string): Promise<void>;
 }
+
+export * from './expressions/index.js';
+export * from './delivery/planDeliveries.js';
+export * from './retry/backoff.js';
+export * from './registry/nodeRegistry.js';
+export * from './validator/index.js';
+export * from './testing/index.js';
