@@ -11,6 +11,7 @@ import { mergeNode } from './logic/merge/index.js';
 import { forEachNode } from './logic/foreach/index.js';
 import { httpNode } from './api/http/index.js';
 import { telegramSendNode } from './notification/telegram/index.js';
+import { geminiNode } from './ai/gemini/index.js';
 
 export const allStandardNodes = [
   manualTriggerNode,
@@ -25,6 +26,7 @@ export const allStandardNodes = [
   forEachNode,
   httpNode,
   telegramSendNode,
+  geminiNode,
 ];
 
 export function initializeRegistry(registry: NodeRegistry = defaultNodeRegistry): NodeRegistry {

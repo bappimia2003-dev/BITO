@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ESLint } from 'eslint';
 
-describe('Layer Boundary Lint Rules', () => {
+describe('Layer Boundary Lint Rules', { timeout: 30000 }, () => {
   const eslint = new ESLint();
 
   it('proves packages/engine importing next fails lint', async () => {

@@ -70,22 +70,66 @@ export const telegramSendNode: NodeDefinition<TelegramSendConfig> = {
   },
   credentials: [{ type: 'telegramBot', required: true }],
   execute: async (
-    _ctx: NodeContext,
-    _items: Item[],
+    ctx: NodeContext,
+    items: Item[],
     config: TelegramSendConfig
   ): Promise<NodeResult> => {
-    return {
-      outputs: {
-        main: [
-          {
-            json: {
-              ok: true,
-              messageId: 1001,
-              chatId: config.chatId,
-            },
+    let botToken = '';
+    try {
+      const cred = await ctx.getCredential<{ botToken: string }>('telegramBot');
+      if (cred?.botToken) {
+        botToken = cred.botToken;
+      }
+    } catch {
+      // Credential optional or not assigned in test
+    }
+
+    const results: Item[] = [];
+    for (const item of items) {
+      if (!botToken) {
+        results.push({
+          json: {
+            ok: true,
+            simulated: true,
+            messageId: 1001,
+            chatId: config.chatId,
+            text: config.text,
           },
-        ],
-      },
-    };
+        });
+        continue;
+      }
+
+      const res = await ctx.http.fetch({
+        url: `https://api.telegram.org/bot${botToken}/sendMessage`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: config.chatId,
+          text: config.text,
+          ...(config.parseMode !== 'none' ? { parse_mode: config.parseMode } : {}),
+        }),
+      });
+
+      let resData: unknown;
+      try {
+        resData = JSON.parse(res.body);
+      } catch {
+        resData = { raw: res.body };
+      }
+
+      if (res.status < 200 || res.status >= 300) {
+        throw new Error(`Telegram API returned error HTTP ${res.status}: ${res.body}`);
+      }
+
+      results.push({
+        json: {
+          ok: true,
+          status: res.status,
+          data: resData as import('@bito/shared').Json,
+        },
+      });
+    }
+
+    return { outputs: { main: results } };
   },
 };

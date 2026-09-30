@@ -70,22 +70,23 @@ export function NodePalette() {
   if (!isPaletteOpen) return null;
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-border bg-card/80 backdrop-blur text-card-foreground select-none z-10">
+    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-card text-card-foreground select-none z-10">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border p-3">
-        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="flex h-11 items-center justify-between border-b border-border px-3">
+        <div className="text-xs font-bold uppercase tracking-wider text-foreground">
           Nodes Palette
         </div>
         <button
           onClick={() => setIsPaletteOpen(false)}
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          title="Close Palette"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Search Input */}
-      <div className="p-3">
+      <div className="p-2.5 border-b border-border">
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
           <input
@@ -93,23 +94,23 @@ export function NodePalette() {
             placeholder="Search nodes... (/)"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-md border border-border bg-background py-1.5 pl-8 pr-3 text-xs outline-none focus:border-primary"
+            className="w-full rounded-md border border-border bg-background py-1.5 pl-8 pr-2.5 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors"
           />
         </div>
       </div>
 
       {/* Nodes List */}
-      <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-2 py-2.5 space-y-3.5">
         {CATEGORY_ORDER.map((cat) => {
           const nodes = grouped.get(cat) || [];
           if (nodes.length === 0) return null;
 
           return (
-            <div key={cat} className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+            <div key={cat} className="space-y-1">
+              <div className="flex items-center gap-1.5 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {getCategoryIcon(cat)}
-                <span>{cat}</span>
-                <span className="text-[10px] opacity-60">({nodes.length})</span>
+                <span className="text-foreground/90">{cat}</span>
+                <span className="text-[11px] text-muted-foreground font-normal">({nodes.length})</span>
               </div>
 
               <div className="space-y-1">
@@ -122,19 +123,19 @@ export function NodePalette() {
                       e.dataTransfer.effectAllowed = 'copy';
                     }}
                     onClick={() => addNode(node.type)}
-                    className="group flex cursor-pointer items-start justify-between rounded-lg border border-transparent p-2 text-xs hover:border-border hover:bg-muted/70 transition-all active:scale-[0.98]"
+                    className="group flex cursor-pointer items-start justify-between rounded-lg border border-transparent p-2 text-xs hover:border-border hover:bg-muted transition-all active:scale-[0.98]"
                   >
-                    <div className="space-y-0.5 truncate pr-2">
-                      <div className="font-medium text-foreground truncate">{node.name}</div>
-                      <div className="text-[10px] text-muted-foreground truncate leading-tight">
+                    <div className="space-y-0.5 min-w-0 flex-1 pr-1.5">
+                      <div className="font-semibold text-foreground text-xs leading-normal truncate">{node.name}</div>
+                      <div className="text-[11px] text-muted-foreground leading-normal line-clamp-2">
                         {node.description}
                       </div>
                     </div>
                     <button
-                      className="opacity-0 group-hover:opacity-100 rounded p-1 text-muted-foreground hover:bg-background transition-opacity"
+                      className="opacity-0 group-hover:opacity-100 rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground transition-opacity shrink-0 mt-0.5"
                       title="Add to canvas"
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 ))}

@@ -3,15 +3,22 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, LogOut, ChevronRight, User } from 'lucide-react';
+import { Menu, LogOut, ChevronRight, User, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle.js';
 
 interface AppHeaderProps {
   onToggleMobileDrawer: () => void;
   userEmail?: string | null;
+  sidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
-export function AppHeader({ onToggleMobileDrawer, userEmail }: AppHeaderProps) {
+export function AppHeader({
+  onToggleMobileDrawer,
+  userEmail,
+  sidebarCollapsed,
+  onToggleSidebar,
+}: AppHeaderProps) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = React.useState(false);
 
@@ -27,16 +34,31 @@ export function AppHeader({ onToggleMobileDrawer, userEmail }: AppHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-card/80 px-4 backdrop-blur-sm">
-      {/* Left: Mobile Toggle & Brand/Breadcrumbs */}
-      <div className="flex items-center gap-3">
+    <header className="shrink-0 flex h-14 w-full items-center justify-between border-b border-border bg-card px-4 z-30 select-none">
+      {/* Left: Mobile Toggle, Desktop Sidebar Toggle & Brand/Breadcrumbs */}
+      <div className="flex items-center gap-2">
+        {onToggleSidebar && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="hidden md:inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            title={sidebarCollapsed ? 'Expand workspace sidebar' : 'Hide workspace sidebar'}
+          >
+            {sidebarCollapsed ? (
+              <PanelLeftOpen className="h-4 w-4" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" />
+            )}
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onToggleMobileDrawer}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border md:hidden text-foreground hover:bg-accent"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border md:hidden text-foreground hover:bg-accent"
           aria-label="Open mobile menu"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-4 w-4" />
         </button>
 
         <nav aria-label="Breadcrumb" className="flex items-center text-sm font-medium">

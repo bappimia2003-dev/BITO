@@ -5,11 +5,11 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   BackgroundVariant,
   type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { useTheme } from 'next-themes';
 import { useEditor } from './EditorContext.js';
 import { CustomWorkflowNode } from './CustomWorkflowNode.js';
 import { NodePalette } from './NodePalette.js';
@@ -107,16 +107,19 @@ export function EditorCanvas() {
     ]
   );
 
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   return (
     <div
       ref={reactFlowWrapper}
       onKeyDown={handleKeyDown}
       tabIndex={0}
-      className="relative flex flex-1 w-full h-full overflow-hidden outline-none bg-background"
+      className="relative flex flex-1 min-h-0 min-w-0 w-full overflow-hidden outline-none bg-background text-foreground"
     >
       <NodePalette />
 
-      <div className="relative flex-1 h-full" onDragOver={onDragOver} onDrop={onDrop}>
+      <div className="relative flex-1 min-h-0 min-w-0 h-full" onDragOver={onDragOver} onDrop={onDrop}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -133,19 +136,20 @@ export function EditorCanvas() {
           fitView
           minZoom={0.2}
           maxZoom={2}
+          colorMode={isDark ? 'dark' : 'light'}
           defaultEdgeOptions={{
             type: 'smoothstep',
             animated: true,
           }}
+          proOptions={{ hideAttribution: true }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#64748b" />
-          <Controls position="bottom-left" showInteractive={false} />
-          <MiniMap
-            position="bottom-right"
-            nodeColor="#3b82f6"
-            maskColor="rgba(0, 0, 0, 0.4)"
-            className="!border !border-border !bg-card !rounded-lg overflow-hidden"
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={16}
+            size={1}
+            color={isDark ? '#475569' : '#cbd5e1'}
           />
+          <Controls position="bottom-left" showInteractive={false} />
         </ReactFlow>
 
         <ConflictModal />

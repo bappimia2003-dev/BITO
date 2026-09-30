@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root,
+.light {
   --background: #ffffff;
   --foreground: #09090b;
   --muted: #f4f4f5;

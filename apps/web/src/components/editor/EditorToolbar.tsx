@@ -81,7 +81,7 @@ export function EditorToolbar() {
   };
 
   return (
-    <header className="flex h-14 w-full items-center justify-between border-b border-border bg-card px-4 text-card-foreground select-none">
+    <header className="shrink-0 flex h-14 w-full items-center justify-between border-b border-border bg-card px-4 text-card-foreground select-none z-20">
       {/* Left section: Back button & Workflow Name & Status */}
       <div className="flex items-center gap-3">
         <Link

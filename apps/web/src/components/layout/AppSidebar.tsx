@@ -12,13 +12,15 @@ import {
   Variable,
   Settings,
   Shield,
+  PanelLeftClose,
 } from 'lucide-react';
 
 interface AppSidebarProps {
   onCloseMobile?: () => void;
+  onToggleCollapse?: () => void;
 }
 
-export function AppSidebar({ onCloseMobile }: AppSidebarProps) {
+export function AppSidebar({ onCloseMobile, onToggleCollapse }: AppSidebarProps) {
   const pathname = usePathname();
 
   // Extract projectId if inside /projects/[id]
@@ -61,41 +63,53 @@ export function AppSidebar({ onCloseMobile }: AppSidebarProps) {
     : [];
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-border bg-card text-card-foreground">
+    <aside className="flex h-full w-52 shrink-0 flex-col border-r border-border bg-card text-card-foreground select-none">
       {/* Brand Header */}
-      <div className="flex h-14 items-center gap-2 border-b border-border px-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm shadow">
-          B
+      <div className="flex h-14 items-center justify-between border-b border-border px-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xs shadow">
+            B
+          </div>
+          <Link
+            href="/projects"
+            onClick={onCloseMobile}
+            className="flex items-center gap-1 font-semibold text-sm tracking-tight hover:opacity-80 truncate"
+          >
+            <span className="text-foreground">BITO</span>
+            <span className="text-xs text-muted-foreground font-normal">Platform</span>
+          </Link>
         </div>
-        <Link
-          href="/projects"
-          onClick={onCloseMobile}
-          className="flex items-center gap-1 font-semibold tracking-tight hover:opacity-80"
-        >
-          <span className="text-foreground">BITO</span>
-          <span className="text-xs text-muted-foreground font-normal ml-1">Platform</span>
-        </Link>
+        {onToggleCollapse && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="hidden md:inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
+            title="Hide workspace sidebar"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      <div className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4">
         {/* Global Links */}
         <div>
-          <div className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="px-2 mb-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Workspace
           </div>
           <nav className="space-y-1">
             <Link
               href="/projects"
               onClick={onCloseMobile}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors ${
                 pathname === '/projects'
                   ? 'bg-primary/10 text-primary font-semibold'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }`}
             >
-              <FolderKanban className="h-4 w-4" />
-              <span>All Projects</span>
+              <FolderKanban className="h-4 w-4 shrink-0" />
+              <span className="truncate">All Projects</span>
             </Link>
           </nav>
         </div>
@@ -103,7 +117,7 @@ export function AppSidebar({ onCloseMobile }: AppSidebarProps) {
         {/* Project Links (when in project context) */}
         {projectId && (
           <div>
-            <div className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <div className="px-2 mb-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Project
             </div>
             <nav className="space-y-1">
@@ -115,14 +129,14 @@ export function AppSidebar({ onCloseMobile }: AppSidebarProps) {
                     key={link.href}
                     href={link.href}
                     onClick={onCloseMobile}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors ${
                       isActive
                         ? 'bg-primary/10 text-primary font-semibold'
                         : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
-                    <span>{link.label}</span>
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{link.label}</span>
                   </Link>
                 );
               })}
@@ -132,18 +146,18 @@ export function AppSidebar({ onCloseMobile }: AppSidebarProps) {
       </div>
 
       {/* Bottom Footer: Account & Security */}
-      <div className="border-t border-border p-3 space-y-1">
+      <div className="border-t border-border p-2.5 space-y-1">
         <Link
           href="/settings/security"
           onClick={onCloseMobile}
-          className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors ${
             pathname?.startsWith('/settings/security')
               ? 'bg-primary/10 text-primary font-semibold'
               : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
           }`}
         >
-          <Shield className="h-4 w-4" />
-          <span>Security & Passkeys</span>
+          <Shield className="h-4 w-4 shrink-0" />
+          <span className="truncate">Security & Passkeys</span>
         </Link>
       </div>
     </aside>

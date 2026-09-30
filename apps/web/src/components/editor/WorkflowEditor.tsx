@@ -9,7 +9,7 @@ import { ExecutionLogsPanel } from './ExecutionLogsPanel.js';
 export function WorkflowEditor(props: EditorProviderProps) {
   return (
     <EditorProvider {...props}>
-      <div className="flex flex-col h-[calc(100vh-3.5rem)] w-full overflow-hidden bg-background">
+      <div className="flex flex-col h-full w-full overflow-hidden bg-background">
         <EditorToolbar />
         <EditorCanvas />
         <ExecutionLogsPanel />
