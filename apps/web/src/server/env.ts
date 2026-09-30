@@ -99,7 +99,7 @@ export function validateEnv(customEnv?: Record<string, string | undefined>): Env
     WEBAUTHN_ORIGIN:
       source.WEBAUTHN_ORIGIN || (allowDevDefaults ? 'http://localhost:3000' : undefined),
     SUPABASE_URL: source.SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY: source.SUPABASE_SERVICE_ROLE_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: source.SUPABASE_SERVICE_ROLE_KEY || source.SUPABASE_SECRET_KEY,
     ALLOW_REGISTRATION: source.ALLOW_REGISTRATION,
     GEMINI_DEFAULT_MODEL: source.GEMINI_DEFAULT_MODEL ?? 'gemini-2.5-flash',
     GEMINI_PLATFORM_API_KEY: source.GEMINI_PLATFORM_API_KEY,
